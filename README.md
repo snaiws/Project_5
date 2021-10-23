@@ -53,4 +53,8 @@ API 시도
 
 라이엇 API의 기능이 매우 제한됨. op.gg는 그 제한된 기능으로 차곡차곡 데이터를 모아서 통계를 낸것. 즉 롤 api로 과거 매치데이터를 얻기는 힘듬. 일단 라이엇데이터스키마를 그려보자. 
 나도 데이터를 축적하면 좋겠다만 용량이 상당히 클거같다. 그리고 과거데이터 접근이 불가능한거같은데 달리 방법이 없는지 더 찾아봐야한다   
-근데 진짜 이런거 너무 싫다. 그 웹만드는 템플릿사이트도 기능이 있나없나 찾느라 시간 엄청보냈는데, 차라리 자스랑 css를 공부를하지, 어떤사람은 플젝2주짜리 기간동안 여기에 몰입햇더만. 라이엇 api도 있는지 없는지 되는지 안되는지 직접 하나하나찾아야해서 시간 버리네
+근데 진짜 이런거 너무 싫다. 그 웹만드는 템플릿사이트도 기능이 있나없나 찾느라 시간 엄청보냈는데, 차라리 자스랑 css를 공부를하지, 어떤사람은 플젝2주짜리 기간동안 여기에 몰입햇더만. 라이엇 api도 있는지 없는지 되는지 안되는지 직접 하나하나찾아야해서 시간 버리네   
+------------------------------------
+라이엇피셜:   
+Very unlikely. Again, we do not own this service, so it's not up to us. However, I can tell you that the amount of game data that has to be stored across all regions and shards for 3 years is insanely massive, and there is a huge resource and operational cost to Riot to store all that. Thus, it is very unlikely. Also note that 1) any trends on game data older than 3 years is unlikely to be very relevant given how much League changes each season and 2) you are welcome to store all the data you fetch, so that as time passes you will build up many more years worth of data that you have stored and can run trends on.   
+결국 opgg를 해킹하거나 최근데이터만 사용해야함
