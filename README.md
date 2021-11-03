@@ -58,3 +58,11 @@ API 시도
 라이엇피셜:   
 Very unlikely. Again, we do not own this service, so it's not up to us. However, I can tell you that the amount of game data that has to be stored across all regions and shards for 3 years is insanely massive, and there is a huge resource and operational cost to Riot to store all that. Thus, it is very unlikely. Also note that 1) any trends on game data older than 3 years is unlikely to be very relevant given how much League changes each season and 2) you are welcome to store all the data you fetch, so that as time passes you will build up many more years worth of data that you have stored and can run trends on.   
 결국 opgg를 해킹하거나 최근데이터만 사용해야함
+
+----------------------------------------
+직접 유저를 뽑아서 유저의 최근 전적을 모아 일회성 데이터로 활용하기로 했다.   
+그런데 또 문제가 발생했다.   
+챔프+아군의 챔프전적으로 딥러닝하려했는데, 어떤 경기 시작 직전 아군의 챔프 전적을 못구한다.   
+그래서 최근1~5경기 전 이기고 졌는가를 고려하기로 했다.   
+이 db를 그대로 프로젝트2에 써먹기 위해 RDBMS를 쓰기로 했다.   
+postgresql이 mysql보다 insert가 빠르다하여 이걸 쓰기로 했다.   
