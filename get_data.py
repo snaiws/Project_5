@@ -17,11 +17,29 @@ def connect():
     if cur.fetchall() == []:
         creatTable = (
             """
+            CREATE TABLE VERSION(
+                version VARCHAR(15) PRIMARY KEY,
+                start_time VARCHAR(15) NOT NULL,
+                end_time VARCHAR(15) NOT NULL,
+                summoner_name_done BOOL NOT NULL,
+                puuid_done BOOL NOT NULL,
+                matchlist_done BOOL NOT NULL,
+                match_done BOOL NOT NULL
+            );
+            """,
+            """
+            CREATE TABLE SUMMONER(
+                summonerName VARCHAR(31) PRIMARY KEY,
+                puuid CHAR(78),
+                hasMatchId BOOL NOT NULL
+            );
+            """,
+            """
             CREATE TABLE MATCHID(
                 matchId VARCHAR(15) PRIMARY KEY,
                 version VARCHAR(15) NOT NULL,
                 tier VARCHAR(15) NOT NULL,
-                hasMatch BOOL NOT NULL
+                hasMatch BOOL NOT NULL,
                 FOREIGN KEY (version)
                 REFERENCES VERSION (version)
                 ON UPDATE CASCADE ON DELETE CASCADE
@@ -32,7 +50,7 @@ def connect():
                 id SERIAL PRIMARY KEY,
                 matchId VARCHAR(15) NOT NULL,
                 summonerName VARCHAR(31) NOT NULL,
-                puuid VARCHAR(63) NOT NULL,
+                puuid CHAR(78) NOT NULL,
                 teamPosition VARCHAR(7) NOT NULL,
                 participantId INT NOT NULL,
                 championName VARCHAR(15) NOT NULL,
@@ -58,23 +76,8 @@ def connect():
                 REFERENCES MATCHID (matchId)
                 ON UPDATE CASCADE ON DELETE CASCADE
             );
-            """,
             """
-            CREATE TABLE PUUID(
-                summonerName VARCHAR(31) PRIMARY KEY,
-                puuid VARCHAR(63),
-                hasMatchId BOOL NOT NULL
-            """,
-            """
-            CREATE TABLE VERSION(
-                version VARCHAR(15) PRIMARY KEY,
-                start_time VARCHAR(15) NOT NULL,
-                end_time VARCHAR(15) NOT NULL,
-                summoner_name_done BOOL NOT NULL,
-                puuid_done BOOL NOT NULL,
-                matchlist_done BOOL NOT NULL,
-                match_done BOOL NOT NULL
-            """)
+            )
         for creatTable in creatTable:
             cur.execute(creatTable)
             print('table created')
@@ -92,7 +95,8 @@ def connect():
         end_time = input('수집할 마지막 날짜 입력\n')
         y, m, d = int(end_time[:4]), int(end_time[4:6]), int(end_time[6:])
         end_time = str(int((datetime.datetime(y,m,d,11,0) - datetime.datetime(1970,1,1)).total_seconds()))
-        cur.execute(f"INSERT INTO VERSION (version, start_time, end_time, summoner_name_done, puuid_done, matchlist_done, match_done) VALUES({version}, {start_time}, {end_time}, FALSE, FALSE, FALSE, FALSE);")
+        summoner_name_done, puuid_done, matchlist_done, match_done = (False, False, False, False)
+        cur.execute(f"INSERT INTO VERSION (version, start_time, end_time, summoner_name_done, puuid_done, matchlist_done, match_done) VALUES('{version}', '{start_time}', '{end_time}', 'FALSE', 'FALSE', 'FALSE', 'FALSE');")
         conn.commit()
     else:
         for i in versions:
@@ -100,12 +104,13 @@ def connect():
         version = input('version 입력\n')
         cur.execute(f"SELECT * FROM VERSION WHERE version = '{version}';")
         versions = cur.fetchall()
-        start_time = versions[1]
-        end_time = version[2]
-        summoner_name_done = version[3]
-        puuid_done = version[4]
-        matchlist_done = version[5]
-        match_done = version[6]
+        print(versions)
+        start_time = versions[0][1]
+        end_time = versions[0][2]
+        summoner_name_done = versions[0][3]
+        puuid_done = versions[0][4]
+        matchlist_done = versions[0][5]
+        match_done = versions[0][6]
 
     #tier = input('티어 입력(영어 대문자)\n')
     tier = 'DIAMOND'
@@ -129,29 +134,31 @@ def connect():
                 break
         sList=list(set(sList))
         for i in sList:
-            cur.execute(f"INSERT INTO PUUID (puuid, summonerName,hasMatchId) VALUES({i}, null, FALSE);")
-        cur.execute(f'UPDATE version SET summoner_name_done = TRUE WHERE version = {version};')
-        conn.commit()
+            cur.execute(f"INSERT INTO SUMMONER (summonerName, hasMatchId) VALUES('{i}', 'FALSE');")
+        cur.execute(f"SELECT * FROM SUMMONER WHERE puuid is null")
+        if cur.fetchall() == []:
+            cur.execute(f"UPDATE version SET summoner_name_done = TRUE WHERE version = CAST('{version}' AS character varying);")
+            conn.commit()
 
 
     #getPuuid
     if not puuid_done:
-        cur.execute(f"SELECT summonerName FROM PUUID where puuid is null;")
+        cur.execute(f"SELECT summonerName FROM SUMMONER where puuid is null;")
         sList = [i[0] for i in cur.fetchall()]
         for i in sList:
             print(f'getting puuid of {(i)}..')
             data = getData.getPuuid(i)
             if data != 404:
-                cur.execute(f"UPDATE PUUID SET puuid = {data['puuid']} WHERE summonerName = {i};")
+                cur.execute(f"UPDATE SUMMONER SET puuid = '{data['puuid']}' WHERE summonerName = '{i}';")
             elif data == 404:
-                cur.execute(f"DELETE FROM PUUID WHERE summonerName = {i};")
+                cur.execute(f"DELETE FROM SUMMONER WHERE summonerName = '{i}';")
             conn.commit()
-        cur.execute(f'UPDATE version SET puuid_done = TRUE WHERE version = {version};')
+        cur.execute(f"UPDATE version SET puuid_done = TRUE WHERE version = CAST('{version}' AS character varying);")
         conn.commit()
 
     #getMatchId
     if not matchlist_done:
-        cur.execute(f"SELECT * FROM PUUID where hasMatchList = FALSE;")
+        cur.execute(f"SELECT summonerName, puuid FROM SUMMONER where hasMatchId = FALSE;")
         sDict = {}
         for i, j in cur.fetchall():
             sDict[i]=j
@@ -164,7 +171,7 @@ def connect():
             for j in matchId:
                 if j not in mList:
                     cur.execute(f"INSERT INTO MATCHID (matchId, version, tier, hasMatch) VALUES({j},{version},{tier},FALSE)")
-                    cur.execute(f"UPDATE PUUID SET hasMatchList = TRUE WHERE summonerName = {i};")
+                    cur.execute(f"UPDATE SUMMONER SET hasMatchId = TRUE WHERE summonerName = '{i}';")
                     conn.commit()
                     mList.append(j)
         cur.execute(f'UPDATE version SET matchlist_done = TRUE WHERE version = {version};')
@@ -181,7 +188,7 @@ def connect():
             gameDuration = match['info']['gameDuration']
             match = match['info']['participants']
             for j in match:
-                cur.execute(f"INSERT INTO MATCH (id, matchId, summonerName, puuid, teamPosition, participantId, championName, gameDuration, champExperience, champLevel, goldEarned, kills, deaths, assists, totalMinionsKilled, neutralMinionsKilled, visionScore, totalDamageDealtToChampions, totalTimeCCDealt, timeCCingOthers, firstBloodAssist, firstBloodKill, firstTowerAssist, firstTowerKill, win) VALUES(DEFAULT, {i}, {j['summonerName']}, {j['puuid']}, {j['teamPosition']}, {j['participantId']}, {j['championName']}, {gameDuration}, {j['champExperience']}, {j['champLevel']}, {j['goldEarned']}, {j['kills']}, {j['deaths']}, {j['assists']}, {j['totalMinionsKilled']}, {j['neutralMinionsKilled']}, {j['visionScore']}, {j['totalDamageDealtToChampions']}, {j['totalTimeCCDealt']}, {j['timeCCingOthers']}, {j['firstBloodAssist']}, {j['firstBloodKill']}, {j['firstTowerAssist']}, {j['firstTowerKill']}, {j['win']});")
+                cur.execute(f"INSERT INTO MATCH (id, matchId, summonerName, puuid, teamPosition, participantId, championName, gameDuration, champExperience, champLevel, goldEarned, kills, deaths, assists, totalMinionsKilled, neutralMinionsKilled, visionScore, totalDamageDealtToChampions, totalTimeCCDealt, timeCCingOthers, firstBloodAssist, firstBloodKill, firstTowerAssist, firstTowerKill, win) VALUES(DEFAULT, '{i}', '{j['summonerName']}', '{j['puuid']}', '{j['teamPosition']}', {j['participantId']}, '{j['championName']}', {gameDuration}, {j['champExperience']}, {j['champLevel']}, {j['goldEarned']}, {j['kills']}, {j['deaths']}, {j['assists']}, {j['totalMinionsKilled']}, {j['neutralMinionsKilled']}, {j['visionScore']}, {j['totalDamageDealtToChampions']}, {j['totalTimeCCDealt']}, {j['timeCCingOthers']}, {j['firstBloodAssist']}, {j['firstBloodKill']}, {j['firstTowerAssist']}, {j['firstTowerKill']}, {j['win']});")
             cur.execute(f"UPDATE MATCHID SET hasMatch = TRUE WHERE matchId = {i}")
             conn.commit()
         cur.execute(f'UPDATE version SET match_done = TRUE WHERE version = {version};')
