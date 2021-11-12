@@ -66,3 +66,6 @@ Very unlikely. Again, we do not own this service, so it's not up to us. However,
 그래서 최근1~5경기 전 이기고 졌는가를 고려하기로 했다.   
 이 db를 그대로 프로젝트2에 써먹기 위해 RDBMS를 쓰기로 했다.   
 postgresql이 mysql보다 insert가 빠르다하여 이걸 쓰기로 했다.   
+------------------------------------------
+엄청 많은 일이 있었고 과정은 블로그에 적음   
+데이터 생각보다 적게 뽑힐거같으니 딥러닝에서 머신러닝으로 바꾸던가 하자 일단 이제 수집 코드 제대로 완성했음
