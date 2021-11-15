@@ -162,20 +162,21 @@ def connect():
         sDict = {}
         for i, j in cur.fetchall():
             sDict[i]=j
-        mList=[]
+        cur.execute(f"SELECT MATCHID FROM MATCHID")
+        mList=[i[0] for i in cur.fetchall()]
         for i in sDict:
             print(f'getting match IDs of {i}..')
             matchId=getData.getMatchId(sDict[i])
-            if matchId == None:
-                continue
             for j in matchId:
                 if j not in mList:
-                    cur.execute(f"INSERT INTO MATCHID (matchId, version, tier, hasMatch) VALUES({j},{version},{tier},FALSE)")
-                    cur.execute(f"UPDATE SUMMONER SET hasMatchId = TRUE WHERE summonerName = '{i}';")
-                    conn.commit()
-                    mList.append(j)
-        cur.execute(f'UPDATE version SET matchlist_done = TRUE WHERE version = {version};')
-        conn.commit()
+                    cur.execute(f"INSERT INTO MATCHID (matchId, version, tier, hasMatch) VALUES('{j}','{version}','{tier}',FALSE)")
+            cur.execute(f"UPDATE SUMMONER SET hasMatchId = TRUE WHERE summonerName = '{i}';")
+            conn.commit()
+            mList.append(j)
+        cur.execute("select * from summoner where hasmatchid = FALSE;")
+        if cur.fetchall() == []:
+            cur.execute(f"UPDATE version SET matchlist_done = TRUE WHERE version = '{version}';")
+            conn.commit()
 
 
     #getMatch
@@ -184,15 +185,17 @@ def connect():
         mList = [i[0] for i in cur.fetchall()]
         for i in mList:
             print(f'getting match {i}..')
-            match, gameDuration = getData.getMatch(i)
+            match = getData.getMatch(i)
             gameDuration = match['info']['gameDuration']
             match = match['info']['participants']
             for j in match:
                 cur.execute(f"INSERT INTO MATCH (id, matchId, summonerName, puuid, teamPosition, participantId, championName, gameDuration, champExperience, champLevel, goldEarned, kills, deaths, assists, totalMinionsKilled, neutralMinionsKilled, visionScore, totalDamageDealtToChampions, totalTimeCCDealt, timeCCingOthers, firstBloodAssist, firstBloodKill, firstTowerAssist, firstTowerKill, win) VALUES(DEFAULT, '{i}', '{j['summonerName']}', '{j['puuid']}', '{j['teamPosition']}', {j['participantId']}, '{j['championName']}', {gameDuration}, {j['champExperience']}, {j['champLevel']}, {j['goldEarned']}, {j['kills']}, {j['deaths']}, {j['assists']}, {j['totalMinionsKilled']}, {j['neutralMinionsKilled']}, {j['visionScore']}, {j['totalDamageDealtToChampions']}, {j['totalTimeCCDealt']}, {j['timeCCingOthers']}, {j['firstBloodAssist']}, {j['firstBloodKill']}, {j['firstTowerAssist']}, {j['firstTowerKill']}, {j['win']});")
-            cur.execute(f"UPDATE MATCHID SET hasMatch = TRUE WHERE matchId = {i}")
+            cur.execute(f"UPDATE MATCHID SET hasMatch = TRUE WHERE matchId = '{i}'")
             conn.commit()
-        cur.execute(f'UPDATE version SET match_done = TRUE WHERE version = {version};')
-        conn.commit()
+        cur.execute("select * from matchid where hasmatch = FALSE")
+        if cur.fetchall() == []:
+            cur.execute(f"UPDATE version SET match_done = TRUE WHERE version = '{version}';")
+            conn.commit()
         
 
 # close the communication with the PostgreSQL
