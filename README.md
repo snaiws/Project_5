@@ -8,10 +8,10 @@ Riot API의 제한이 커서 아직 구현하지 못했습니다.
 
 --------------------------------------------------------------------
 
-[Riot API](https://developer.riotgames.com/)
+#[Riot API](https://developer.riotgames.com/)
 
-API KEY : 24시간 제한   
-1.2초당 1회 request 권장   
+API KEY : 24시간마다 만료됨   
+1.2초당 1회 이하로 request 해야함   
 
 매치데이터 얻는 과정   
 1. LEAGUE-EXP-V4(League of Legends)를 통해 summonerName 리스트 얻기   
