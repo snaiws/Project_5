@@ -1,1 +1,5 @@
 **/.env
+ocdd_FE.csv
+/ocdd_FE.csv
+
+find . -size +100M | cat >> .gitignore
