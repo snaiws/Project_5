@@ -8,7 +8,7 @@ Riot API의 제한이 커서 아직 구현하지 못했습니다.
 
 --------------------------------------------------------------------
 
-#[Riot API][Riot API Link]
+[Riot API][Riot API Link]
 [Riot API Link]: https://developer.riotgames.com/ "이동"
 
 API KEY : 24시간 제한   
